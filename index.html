@@ -610,77 +610,7 @@
       resetDefeatFX();
     }
 
-    // 3D 视差与陀螺仪
-    let parallaxRAF = 0;
-    function applyParallax(nx, ny) {
-      cancelAnimationFrame(parallaxRAF);
-      parallaxRAF = requestAnimationFrame(() => {
-        bossFrame.style.transform = `rotateX(${(-ny*8).toFixed(2)}deg) rotateY(${(nx*8).toFixed(2)}deg) translateY(-1px)`;
-        const bg = bossFrame.querySelector('.boss-bg');
-        const ch = bossFrame.querySelector('.boss-char');
-        bg.style.transform = `translateZ(-30px) translate(${(-nx*20).toFixed(1)}px, ${(ny*20).toFixed(1)}px) scale(1.04)`;
-        ch.style.transform = `translateZ(30px) translate(${(nx*8).toFixed(1)}px, ${(-ny*8).toFixed(1)}px)`;
-      });
-    }
-    function parallaxMouse(e) {
-      const r = bossFrame.getBoundingClientRect();
-      const x = (e.clientX - (r.left + r.width/2)) / r.width;  // -0.5..0.5
-      const y = (e.clientY - (r.top + r.height/2)) / r.height;
-      applyParallax(x, y);
-    }
-
-    let gyroEnabled = false;
-    let gyroCalib = { beta0: 0, gamma0: 0 };
-    async function enableGyro() {
-      if (!('DeviceOrientationEvent' in window)) {
-        if (gyroState) gyroState.textContent = '不支持';
-        return false;
-      }
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        try {
-          const resp = await DeviceOrientationEvent.requestPermission();
-          if (resp !== 'granted') { if (gyroState) gyroState.textContent = '权限被拒'; return false; }
-        } catch (e) { if (gyroState) gyroState.textContent = '权限失败'; return false; }
-      }
-      window.addEventListener('deviceorientation', handleDeviceOrientation);
-      gyroEnabled = true;
-      if (gyroState) gyroState.textContent = '已启用';
-      if (gyroToggleBtn) gyroToggleBtn.textContent = '陀螺仪 关';
-      gyroCalib = { beta0: 0, gamma0: 0 };
-      return true;
-    }
-    function disableGyro() {
-      window.removeEventListener('deviceorientation', handleDeviceOrientation);
-      gyroEnabled = false;
-      if (gyroState) gyroState.textContent = '未启用';
-      if (gyroToggleBtn) gyroToggleBtn.textContent = '陀螺仪 开';
-      bossFrame.style.transform = '';
-      const bg = bossFrame.querySelector('.boss-bg');
-      const ch = bossFrame.querySelector('.boss-char');
-      bg.style.transform = 'translateZ(-30px) scale(1.04)';
-      ch.style.transform = 'translateZ(30px)';
-    }
-    function handleDeviceOrientation(e) {
-      if (!gyroEnabled) return;
-      let { beta, gamma } = e;
-      if (beta == null || gamma == null) return;
-      beta -= gyroCalib.beta0;
-      gamma -= gyroCalib.gamma0;
-      const nx = Math.max(-0.5, Math.min(0.5, gamma / 45)); // 左右
-      const ny = Math.max(-0.5, Math.min(0.5, beta / 60));  // 前后
-      applyParallax(nx, ny);
-    }
-    function calibrateGyroOnce(e) {
-      if (e && typeof e.beta === 'number' && typeof e.gamma === 'number') {
-        gyroCalib.beta0 = e.beta;
-        gyroCalib.gamma0 = e.gamma;
-        if (gyroState) {
-          gyroState.textContent = '已校准';
-          setTimeout(() => gyroState.textContent = '已启用', 1000);
-        }
-      }
-    }
-
+   
     // 背景微尘粒子生成
     function spawnDust(n = 36) {
       const r = bossFrame.getBoundingClientRect();
@@ -709,15 +639,7 @@
     // 其他事件
     resetBtn.addEventListener('click', resetHP);
 
-    // 鼠标视差（桌面端）
-    bossFrame.addEventListener('mousemove', parallaxMouse);
-    bossFrame.addEventListener('mouseleave', () => {
-      bossFrame.style.transform = '';
-      const bg = bossFrame.querySelector('.boss-bg');
-      const ch = bossFrame.querySelector('.boss-char');
-      bg.style.transform = 'translateZ(-30px) scale(1.04)';
-      ch.style.transform = 'translateZ(30px)';
-    });
+    
 
     // 陀螺仪按钮（容错：若页面无按钮则跳过）
     if (document.getElementById('gyroToggleBtn')) {
@@ -751,4 +673,5 @@
     spawnDust(42);
   </script>
 </body>
+
 </html>
